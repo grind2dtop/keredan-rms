@@ -1,0 +1,1762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Keredan RMS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--teal:#17A2B8;--teal-dark:#138496;--teal-light:#e0f7fa;--dark:#1a1f2e;--gray-50:#f8fafc;--gray-100:#f1f5f9;--gray-200:#e2e8f0;--gray-300:#cbd5e1;--gray-400:#94a3b8;--gray-500:#64748b;--gray-600:#475569;--gray-700:#334155;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--sidebar-w:220px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#f0f4f8;color:var(--dark);display:flex;min-height:100vh}
+
+/* SIDEBAR */
+#sidebar{width:var(--sidebar-w);background:var(--dark);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:100}
+.sidebar-logo{padding:20px 18px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:10px}
+.logo-icon{width:36px;height:36px;background:var(--teal);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;color:white;font-weight:700;flex-shrink:0}
+.logo-text{font-size:13px;font-weight:600;color:white;line-height:1.3}
+.logo-sub{font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:.5px}
+.nav-section-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.3);padding:16px 18px 5px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 18px;cursor:pointer;color:rgba(255,255,255,0.6);font-size:13.5px;font-weight:450;transition:all .15s;position:relative}
+.nav-item:hover{color:white;background:rgba(255,255,255,0.06)}
+.nav-item.active{color:white;background:rgba(23,162,184,0.2)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--teal);border-radius:0 2px 2px 0}
+.nav-icon{font-size:15px;width:20px;text-align:center}
+
+/* MAIN */
+#main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:white;border-bottom:1px solid var(--gray-200);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-title{font-family:'DM Serif Display',serif;font-size:19px;color:var(--dark)}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.page-content{padding:26px;flex:1}
+.page{display:none}
+.page.active{display:block}
+
+/* STAT CARDS */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
+.stat-card{background:white;border-radius:12px;border:1px solid var(--gray-200);padding:18px 20px;position:relative;overflow:hidden;cursor:pointer;transition:all .2s ease;user-select:none}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--teal);transition:height .2s}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(23,162,184,0.15);border-color:var(--teal)}
+.stat-card:hover::before{height:4px}
+.stat-card:active{transform:translateY(0)}
+.stat-card-inner{display:flex;flex-direction:column;gap:2px}
+.stat-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--gray-500);font-weight:600;margin-bottom:6px}
+.stat-value{font-family:'DM Serif Display',serif;font-size:26px;color:var(--dark);line-height:1}
+.stat-sub{font-size:11.5px;color:var(--gray-500);margin-top:5px}
+.stat-icon{position:absolute;top:14px;right:16px;font-size:22px;opacity:.1}
+.stat-click-hint{position:absolute;bottom:10px;right:14px;font-size:10px;color:var(--teal);opacity:0;transition:opacity .2s;font-weight:600;letter-spacing:.3px}
+.stat-card:hover .stat-click-hint{opacity:1}
+.stat-card.danger-card::before{background:var(--danger)}
+.stat-card.danger-card:hover{border-color:var(--danger);box-shadow:0 6px 20px rgba(239,68,68,0.15)}
+.stat-card.success-card::before{background:var(--success)}
+.stat-card.success-card:hover{border-color:var(--success);box-shadow:0 6px 20px rgba(16,185,129,0.15)}
+.stat-card.warning-card::before{background:var(--warning)}
+.stat-card.warning-card:hover{border-color:var(--warning);box-shadow:0 6px 20px rgba(245,158,11,0.15)}
+
+/* CARDS */
+.card{background:white;border-radius:12px;border:1px solid var(--gray-200);overflow:hidden;margin-bottom:18px}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:14px;font-weight:600;color:var(--dark)}
+.card-body{padding:20px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-primary{background:var(--teal);color:white}
+.btn-primary:hover{background:var(--teal-dark)}
+.btn-ghost{background:transparent;color:var(--gray-700);border:1px solid var(--gray-300)}
+.btn-ghost:hover{background:var(--gray-100)}
+.btn-danger{background:var(--danger);color:white}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-warning{background:var(--warning);color:white}
+
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{padding:9px 13px;text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--gray-500);font-weight:600;background:var(--gray-50);border-bottom:1px solid var(--gray-200)}
+.data-table td{padding:11px 13px;border-bottom:1px solid var(--gray-100);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:var(--gray-50)}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-success{background:#d1fae5;color:#065f46}
+.badge-warning{background:#fef3c7;color:#92400e}
+.badge-danger{background:#fee2e2;color:#991b1b}
+.badge-info{background:#dbeafe;color:#1e40af}
+.badge-gray{background:var(--gray-100);color:var(--gray-600)}
+
+/* FORMS */
+.form-group{margin-bottom:15px}
+label{display:block;font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--gray-300);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13.5px;color:var(--dark);background:white;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(23,162,184,0.1)}
+textarea{resize:vertical;min-height:80px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:white;border-radius:14px;width:90%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:white;z-index:1}
+.modal-title{font-size:15px;font-weight:600}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-500);line-height:1}
+.modal-body{padding:22px}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--gray-100);display:flex;justify-content:flex-end;gap:10px;background:white;position:sticky;bottom:0}
+
+/* PROGRESS */
+.progress-bar{height:6px;background:var(--gray-200);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:var(--teal);border-radius:3px;transition:width .4s ease}
+.progress-fill.danger{background:var(--danger)}
+.progress-fill.warning{background:var(--warning)}
+
+/* ALERT BANNER */
+.alert-filter-banner{background:var(--teal-light);border:1px solid var(--teal);border-radius:10px;padding:10px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--teal-dark);font-weight:500}
+.alert-filter-banner.hidden{display:none}
+.alert-filter-banner.danger-banner{background:#fee2e2;border-color:var(--danger);color:#991b1b}
+.alert-filter-banner.warning-banner{background:#fef3c7;border-color:var(--warning);color:#92400e}
+
+/* LEASE EXPIRY */
+.expiry-soon{color:var(--danger);font-weight:600}
+.expiry-warn{color:var(--warning);font-weight:600}
+
+/* PROPERTY PROGRESS */
+.prop-progress-row{margin-bottom:14px}
+.prop-progress-header{display:flex;justify-content:space-between;margin-bottom:5px;font-size:12.5px}
+
+/* RECEIPT SECTION */
+.receipt-form{max-width:700px}
+.line-item-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:start;margin-bottom:10px}
+.remove-line{background:none;border:none;cursor:pointer;color:var(--danger);font-size:18px;padding:8px 4px;line-height:1}
+
+/* TABS */
+.tab-bar{display:flex;gap:4px;border-bottom:2px solid var(--gray-200);margin-bottom:20px}
+.tab-btn{padding:9px 18px;font-size:13px;font-weight:500;cursor:pointer;background:none;border:none;color:var(--gray-500);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;font-family:'DM Sans',sans-serif}
+.tab-btn.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:600}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* SECTION HEADER */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.section-title{font-family:'DM Serif Display',serif;font-size:22px;color:var(--dark)}
+
+/* MISC */
+.empty-state{text-align:center;padding:50px 20px;color:var(--gray-400)}
+.empty-state .empty-icon{font-size:48px;margin-bottom:12px}
+.divider{border:none;border-top:1px solid var(--gray-200);margin:18px 0}
+.text-right{text-align:right}
+.text-teal{color:var(--teal)}
+.text-danger{color:var(--danger)}
+.text-success{color:var(--success)}
+.fw600{font-weight:600}
+.fs12{font-size:12px}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:var(--gray-100);color:var(--gray-600)}
+.tag-fl{background:#dbeafe;color:#1e40af}
+.tag-pr{background:#fce7f3;color:#9d174d}
+.mt10{margin-top:10px}
+.mt20{margin-top:20px}
+.flex-row{display:flex;align-items:center;gap:8px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.summary-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100);font-size:13.5px}
+.summary-row:last-child{border-bottom:none;font-weight:700;font-size:14px}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">K</div>
+    <div>
+      <div class="logo-text">Keredan RMS</div>
+      <div class="logo-sub">PROPERTY MANAGEMENT</div>
+    </div>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding-bottom:20px">
+    <div class="nav-section-label">Main</div>
+    <div class="nav-item active" onclick="navigateTo('dashboard')"><span class="nav-icon">📊</span> Dashboard</div>
+    <div class="nav-item" onclick="navigateTo('properties')"><span class="nav-icon">🏠</span> Properties</div>
+    <div class="nav-item" onclick="navigateTo('tenants')"><span class="nav-icon">👤</span> Tenants</div>
+    <div class="nav-item" onclick="navigateTo('payments')"><span class="nav-icon">💳</span> Payments</div>
+    <div class="nav-section-label">Tools</div>
+    <div class="nav-item" onclick="navigateTo('receipts')"><span class="nav-icon">🧾</span> Receipts</div>
+    <div class="nav-item" onclick="navigateTo('leases')"><span class="nav-icon">📋</span> Lease Tracker</div>
+    <div class="nav-item" onclick="navigateTo('reports')"><span class="nav-icon">📈</span> Reports</div>
+    <div class="nav-section-label">System</div>
+    <div class="nav-item" onclick="navigateTo('settings')"><span class="nav-icon">⚙️</span> Settings</div>
+  </div>
+  <div style="padding:14px 18px;border-top:1px solid rgba(255,255,255,0.08)">
+    <div style="font-size:11px;color:rgba(255,255,255,0.3)">Roldan J. Crespo</div>
+    <div style="font-size:10px;color:rgba(255,255,255,0.2)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8ce7e9fee9e8ede2a2e4ffccebe1ede5e0a2efe3e1">[email&#160;protected]</a></div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Dashboard</div>
+    <div class="topbar-actions">
+      <span style="font-size:12px;color:var(--gray-400)" id="topbar-date"></span>
+    </div>
+  </div>
+  <div class="page-content">
+
+    <!-- ═══════════════════ DASHBOARD ═══════════════════ -->
+    <div class="page active" id="page-dashboard">
+      <div class="section-header">
+        <div class="section-title">Overview</div>
+        <div style="font-size:12px;color:var(--gray-500)" id="dash-month-label"></div>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="stats-grid">
+        <div class="stat-card" onclick="navigateTo('properties')" title="Click to view all properties">
+          <div class="stat-icon">🏠</div>
+          <div class="stat-label">Total Properties</div>
+          <div class="stat-value" id="stat-properties">—</div>
+          <div class="stat-sub" id="stat-properties-sub"></div>
+          <div class="stat-click-hint">→ View Properties</div>
+        </div>
+        <div class="stat-card" onclick="navigateTo('tenants')" title="Click to view active tenants">
+          <div class="stat-icon">👤</div>
+          <div class="stat-label">Active Tenants</div>
+          <div class="stat-value" id="stat-tenants">—</div>
+          <div class="stat-sub" id="stat-tenants-sub"></div>
+          <div class="stat-click-hint">→ View Tenants</div>
+        </div>
+        <div class="stat-card" onclick="navigateTo('receipts')" title="Click to generate a receipt">
+          <div class="stat-icon">🧾</div>
+          <div class="stat-label">Receipts Issued</div>
+          <div class="stat-value" id="stat-receipts">—</div>
+          <div class="stat-sub">Next: <span id="stat-next-receipt" class="text-teal fw600"></span></div>
+          <div class="stat-click-hint">→ New Receipt</div>
+        </div>
+        <div class="stat-card success-card" onclick="navigateTo('payments')" title="Click to view this month's payments">
+          <div class="stat-icon">✅</div>
+          <div class="stat-label">Collected This Month</div>
+          <div class="stat-value" id="stat-collected">—</div>
+          <div class="stat-sub" id="stat-collected-sub"></div>
+          <div class="stat-click-hint">→ View Payments</div>
+        </div>
+        <div class="stat-card danger-card" onclick="navigateToOutstanding()" title="Click to view outstanding balances">
+          <div class="stat-icon">⚠️</div>
+          <div class="stat-label">Outstanding Balance</div>
+          <div class="stat-value" id="stat-outstanding">—</div>
+          <div class="stat-sub" id="stat-outstanding-sub"></div>
+          <div class="stat-click-hint">→ View Overdue</div>
+        </div>
+        <div class="stat-card warning-card" onclick="navigateTo('leases')" title="Click to view lease expirations">
+          <div class="stat-icon">📋</div>
+          <div class="stat-label">Leases Expiring Soon</div>
+          <div class="stat-value" id="stat-leases-expiring">—</div>
+          <div class="stat-sub">Within 90 days</div>
+          <div class="stat-click-hint">→ Lease Tracker</div>
+        </div>
+      </div>
+
+      <!-- PROPERTY RENT PROGRESS -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">🇺🇸 Florida Portfolio</span><span class="tag tag-fl">LLC</span></div>
+          <div class="card-body" id="fl-progress-body"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">🇵🇷 Puerto Rico Portfolio</span><span class="tag tag-pr">DBA</span></div>
+          <div class="card-body" id="pr-progress-body"></div>
+        </div>
+      </div>
+
+      <!-- RECENT PAYMENTS -->
+      <div class="card mt20">
+        <div class="card-header">
+          <span class="card-title">Recent Payments</span>
+          <button class="btn btn-ghost btn-sm" onclick="navigateTo('payments')">View All →</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="dash-recent-payments">
+            <thead><tr><th>Tenant</th><th>Property</th><th>Month</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead>
+            <tbody id="dash-payments-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ PROPERTIES ═══════════════════ -->
+    <div class="page" id="page-properties">
+      <div class="section-header">
+        <div class="section-title">Properties</div>
+        <button class="btn btn-primary" onclick="openAddProperty()">+ Add Property</button>
+      </div>
+      <div id="properties-list"></div>
+    </div>
+
+    <!-- ═══════════════════ TENANTS ═══════════════════ -->
+    <div class="page" id="page-tenants">
+      <div class="section-header">
+        <div class="section-title">Tenants</div>
+        <div class="flex-row">
+          <select id="tenant-filter-status" onchange="renderTenants()" style="width:auto;font-size:13px;padding:7px 10px">
+            <option value="">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Vacant">Vacant</option>
+          </select>
+          <select id="tenant-filter-entity" onchange="renderTenants()" style="width:auto;font-size:13px;padding:7px 10px">
+            <option value="">All Entities</option>
+            <option value="FL">Florida LLC</option>
+            <option value="PR">Puerto Rico DBA</option>
+          </select>
+          <button class="btn btn-primary" onclick="openAddTenant()">+ Add Tenant</button>
+        </div>
+      </div>
+      <div id="tenants-filter-banner" class="alert-filter-banner hidden"></div>
+      <div class="card">
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>Name</th><th>Property / Unit</th><th>Entity</th><th>Monthly Rent</th><th>Lease Dates</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="tenants-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ PAYMENTS ═══════════════════ -->
+    <div class="page" id="page-payments">
+      <div class="section-header">
+        <div class="section-title">Payments</div>
+        <button class="btn btn-primary" onclick="openAddPayment()">+ Record Payment</button>
+      </div>
+      <div id="payments-filter-banner" class="alert-filter-banner hidden"></div>
+      <div class="flex-row" style="margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <select id="pay-filter-month" onchange="renderPayments()" style="width:auto;font-size:13px;padding:7px 10px">
+          <option value="">All Months</option>
+        </select>
+        <select id="pay-filter-status" onchange="renderPayments()" style="width:auto;font-size:13px;padding:7px 10px">
+          <option value="">All Statuses</option>
+          <option value="Paid">Paid</option>
+          <option value="Partial">Partial</option>
+          <option value="Overdue">Overdue</option>
+          <option value="Pending">Pending</option>
+        </select>
+        <select id="pay-filter-entity" onchange="renderPayments()" style="width:auto;font-size:13px;padding:7px 10px">
+          <option value="">All Entities</option>
+          <option value="FL">Florida LLC</option>
+          <option value="PR">Puerto Rico DBA</option>
+        </select>
+      </div>
+      <div class="card">
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>Tenant</th><th>Property</th><th>Month</th><th>Due</th><th>Paid</th><th>Balance</th><th>Method</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="payments-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ RECEIPTS ═══════════════════ -->
+    <div class="page" id="page-receipts">
+      <div class="section-header">
+        <div class="section-title">Receipt Generator</div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="card receipt-form">
+            <div class="card-header"><span class="card-title" id="receipt-form-title">Generate New Receipt</span><button id="cancel-edit-btn" class="btn btn-ghost btn-sm" style="display:none;margin-left:auto" onclick="cancelReceiptEdit()">✕ Cancel Edit</button></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label>Receipt Number</label>
+                <input type="text" id="rec-number" placeholder="e.g. PR200"/>
+              </div>
+              <div class="form-group">
+                <label>Receipt Date</label>
+                <input type="date" id="rec-date"/>
+              </div>
+              <div class="form-group">
+                <label>Entity</label>
+                <select id="rec-entity">
+                  <option value="FL">Keredan Home Solutions, LLC Florida</option>
+                  <option value="PR">Keredan Home Solutions Puerto Rico (DBA)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Tenant</label>
+                <select id="rec-tenant" onchange="autoFillTenant()">
+                  <option value="">— Select Tenant —</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Property Address (on receipt)</label>
+                <input type="text" id="rec-address"/>
+              </div>
+              <hr class="divider"/>
+              <label style="margin-bottom:10px;display:block">Line Items</label>
+              <div id="line-items-container"></div>
+              <button class="btn btn-ghost btn-sm mt10" onclick="addLineItem()">+ Add Line Item</button>
+              <hr class="divider"/>
+              <div class="form-group">
+                <label>Paid Amount ($)</label>
+                <input type="number" id="rec-paid" placeholder="0.00" oninput="calcReceiptTotals()"/>
+              </div>
+              <div class="form-group">
+                <label>Notes / Other Info</label>
+                <textarea id="rec-notes" placeholder="e.g. February 2026 Rent received via Zelle on 02/01/2026. Thank you!"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Signature Image (optional)</label>
+                <input type="file" id="rec-signature" accept="image/*"/>
+              </div>
+              <div class="card" style="background:var(--gray-50)">
+                <div class="card-body">
+                  <div class="summary-row"><span>Subtotal</span><span id="rec-subtotal">$0.00</span></div>
+                  <div class="summary-row"><span>Tax</span><span>$0.00</span></div>
+                  <div class="summary-row"><span>Total</span><span id="rec-total">$0.00</span></div>
+                  <div class="summary-row"><span>Paid</span><span id="rec-paid-display">$0.00</span></div>
+                  <div class="summary-row"><span>Balance Due</span><span id="rec-balance" class="text-teal">$0.00</span></div>
+                </div>
+              </div>
+              <button class="btn btn-primary" style="width:100%;margin-top:14px;justify-content:center" onclick="generatePDF()">📄 Generate & Download PDF</button>
+            </div>
+          </div>
+        </div>
+        <!-- RECEIPT LOG -->
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Receipt History</span></div>
+            <div style="overflow-x:auto">
+              <table class="data-table">
+                <thead><tr><th>#</th><th>Tenant</th><th>Date</th><th>Total</th><th>Balance</th><th>Actions</th></tr></thead>
+                <tbody id="receipt-log-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ LEASE TRACKER ═══════════════════ -->
+    <div class="page" id="page-leases">
+      <div class="section-header">
+        <div class="section-title">Lease Tracker</div>
+      </div>
+      <div id="leases-filter-banner" class="alert-filter-banner hidden"></div>
+      <div class="card">
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>Tenant</th><th>Property</th><th>Lease Start</th><th>Lease End</th><th>Days Left</th><th>Status</th></tr></thead>
+            <tbody id="leases-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ REPORTS ═══════════════════ -->
+    <div class="page" id="page-reports">
+      <div class="section-header"><div class="section-title">Financial Reports</div></div>
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('rpt-monthly')">Monthly Summary</button>
+        <button class="tab-btn" onclick="switchTab('rpt-outstanding')">Outstanding</button>
+        <button class="tab-btn" onclick="switchTab('rpt-tenant')">Tenant History</button>
+      </div>
+      <div class="tab-panel active" id="rpt-monthly"><div id="rpt-monthly-body"></div></div>
+      <div class="tab-panel" id="rpt-outstanding"><div id="rpt-outstanding-body"></div></div>
+      <div class="tab-panel" id="rpt-tenant">
+        <div class="form-group" style="max-width:300px">
+          <label>Select Tenant</label>
+          <select id="rpt-tenant-select" onchange="renderTenantReport()">
+            <option value="">— Select —</option>
+          </select>
+        </div>
+        <div id="rpt-tenant-body"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div class="page" id="page-settings">
+      <div class="section-header"><div class="section-title">Settings & Data Management</div></div>
+      <div class="grid-2">
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">💾 Data Backup</span></div>
+            <div class="card-body">
+              <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px">Export a complete backup of all your data. Do this at the end of every session.</p>
+              <button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:12px" onclick="exportBackup()">📤 Export Backup</button>
+              <hr class="divider"/>
+              <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">Import a previously exported backup file to restore your data.</p>
+              <input type="file" id="import-file" accept=".json" style="display:none" onchange="importBackup(event)"/>
+              <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="document.getElementById('import-file').click()">📥 Import Backup</button>
+            </div>
+          </div>
+          <div class="card" style="margin-top:16px">
+            <div class="card-header"><span class="card-title">🔄 Reset Data</span></div>
+            <div class="card-body">
+              <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px">Reset the app to built-in seed data. Use only if data appears corrupted. <strong>Export a backup first.</strong></p>
+              <button class="btn btn-danger" style="width:100%;justify-content:center" onclick="confirmReset()">🔄 Reset to Seed Data</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">ℹ️ App Information</span></div>
+            <div class="card-body">
+              <div class="summary-row"><span>System</span><span>Keredan RMS</span></div>
+              <div class="summary-row"><span>Version</span><span>3.1 — March 2026</span></div>
+              <div class="summary-row"><span>Storage</span><span>Browser localStorage</span></div>
+              <div class="summary-row"><span>Key</span><span style="font-size:11px;font-family:monospace">keredan_rms_v3</span></div>
+              <div class="summary-row"><span>Entity FL</span><span>Keredan Home Solutions, LLC</span></div>
+              <div class="summary-row"><span>Entity PR</span><span>Keredan Home Solutions PR (DBA)</span></div>
+              <div class="summary-row"><span>Owner</span><span>Roldan J. Crespo</span></div>
+            </div>
+          </div>
+          <div class="card" style="margin-top:16px;background:var(--teal-50,#f0fafb);border:1px solid var(--teal-200,#b2e4ed)">
+            <div class="card-body">
+              <p style="font-size:13px;color:var(--gray-700);font-weight:600;margin-bottom:8px">💡 Best Practices</p>
+              <p style="font-size:12px;color:var(--gray-500);line-height:1.6">• Export a backup after every session<br>• Always use the same browser<br>• Store backups in Google Drive or Box<br>• Never clear browser cache without exporting first<br>• Import backup whenever opening a new app version</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Reset Confirmation Modal trigger area -->
+      <div id="reset-confirm-banner" style="display:none;margin-top:20px" class="card" style="border:2px solid #ef4444">
+        <div class="card-body" style="background:#fff5f5">
+          <p style="color:#dc2626;font-weight:600;margin-bottom:12px">⚠️ Are you sure? This will erase all your data and reload the original seed data.</p>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-danger" onclick="executeReset()">Yes, Reset Everything</button>
+            <button class="btn btn-ghost" onclick="document.getElementById('reset-confirm-banner').style.display='none'">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end page-content -->
+</div><!-- end main -->
+
+<!-- ═══════ MODALS ═══════ -->
+
+<!-- ADD PAYMENT MODAL -->
+<div class="modal-overlay" id="modal-payment">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="payment-modal-title">Record Payment</span>
+      <button class="modal-close" onclick="closeModal('modal-payment')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pay-id"/>
+      <div class="form-group">
+        <label>Tenant</label>
+        <select id="pay-tenant-select" onchange="autoFillPaymentTenant()">
+          <option value="">— Select Tenant —</option>
+        </select>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Payment Month/Year</label>
+          <input type="month" id="pay-month"/>
+        </div>
+        <div class="form-group">
+          <label>Date Received</label>
+          <input type="date" id="pay-date-received"/>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Amount Due ($)</label>
+          <input type="number" id="pay-amount-due" step="0.01" oninput="calcPaymentBalance()"/>
+        </div>
+        <div class="form-group">
+          <label>Amount Paid ($)</label>
+          <input type="number" id="pay-amount-paid" step="0.01" oninput="calcPaymentBalance()"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Payment Method</label>
+        <select id="pay-method">
+          <option>Zelle</option><option>ATH Móvil</option><option>Cash</option><option>Check</option><option>CashApp</option><option>Bank Transfer</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="pay-status">
+          <option>Paid</option><option>Partial</option><option>Overdue</option><option>Pending</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="pay-notes" style="min-height:60px"></textarea>
+      </div>
+      <div style="background:var(--gray-50);padding:12px;border-radius:8px;font-size:13px">
+        Balance Due: <strong id="pay-balance-display" class="text-teal">$0.00</strong>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-payment')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePayment()">Save Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PROPERTY MODAL -->
+<div class="modal-overlay" id="modal-property">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Add Property</span>
+      <button class="modal-close" onclick="closeModal('modal-property')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Property Name</label><input type="text" id="prop-name"/></div>
+      <div class="form-group"><label>Full Address</label><input type="text" id="prop-address"/></div>
+      <div class="form-grid">
+        <div class="form-group"><label>Entity</label>
+          <select id="prop-entity"><option value="FL">Florida LLC</option><option value="PR">Puerto Rico DBA</option></select>
+        </div>
+        <div class="form-group"><label>Units</label><input type="number" id="prop-units" value="1"/></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>Expected Monthly Rent ($)</label><input type="number" id="prop-expected-rent"/></div>
+        <div class="form-group"><label>Status</label>
+          <select id="prop-status"><option value="Active">Active</option><option value="Inactive">Inactive</option><option value="Sold">Sold</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label>Notes</label><textarea id="prop-notes"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-property')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProperty()">Save Property</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD TENANT MODAL -->
+<div class="modal-overlay" id="modal-tenant">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Add / Edit Tenant</span>
+      <button class="modal-close" onclick="closeModal('modal-tenant')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ten-id"/>
+      <div class="form-grid">
+        <div class="form-group"><label>Full Name</label><input type="text" id="ten-name"/></div>
+        <div class="form-group"><label>Phone</label><input type="text" id="ten-phone"/></div>
+      </div>
+      <div class="form-group"><label>Email</label><input type="email" id="ten-email"/></div>
+      <div class="form-grid">
+        <div class="form-group"><label>Property</label>
+          <select id="ten-property"></select>
+        </div>
+        <div class="form-group"><label>Unit</label><input type="text" id="ten-unit"/></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>Lease Start</label><input type="date" id="ten-lease-start"/></div>
+        <div class="form-group"><label>Lease End</label><input type="date" id="ten-lease-end"/></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>Monthly Rent ($)</label><input type="number" id="ten-rent"/></div>
+        <div class="form-group"><label>Security Deposit ($)</label><input type="number" id="ten-deposit"/></div>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="ten-status"><option>Active</option><option>Vacant</option><option>Inactive</option></select>
+      </div>
+      <div class="form-group"><label>Notes</label><textarea id="ten-notes"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-tenant')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTenant()">Save Tenant</button>
+    </div>
+  </div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ═══════════════════════════════════════════════════════════
+// DATABASE
+// ═══════════════════════════════════════════════════════════
+const DB_KEY='keredan_rms_v3';
+let DB={properties:[],tenants:[],payments:[],receipts:[],nextReceiptNum:200};
+
+function loadDB(){
+  try{const s=localStorage.getItem(DB_KEY);if(s)DB=JSON.parse(s);}catch(e){}
+  if(!DB.properties.length) seedDB();
+}
+
+function saveDB(){localStorage.setItem(DB_KEY,JSON.stringify(DB));}
+
+function seedDB(){
+  // SEED DATA — synchronized from KeredanRMS_Backup_2026-03-07
+  // Receipt #210 corrected: $225 balance received, now fully paid
+  const seed={"properties":[{"id":"p1","name":"Karenita","address":"7206 Karenita Drive, Jacksonville, FL 32210","entity":"FL","units":1,"expectedRent":1630,"status":"Active","notes":"Built 1967. Roof Replaced Aug 2023. HVAC Replaced Sep 2025."},{"id":"p2","name":"Peach","address":"8514 Peach Street, Jacksonville, FL 32220","entity":"FL","units":1,"expectedRent":1855,"status":"Active","notes":"Pet: male cat Kairo."},{"id":"p3","name":"Le Brun","address":"1154 Le Brun Drive, Jacksonville, FL 32205","entity":"FL","units":1,"expectedRent":1855,"status":"Active","notes":"Tenant owes $1280 from May 2025."},{"id":"p4","name":"Estancias Julia Rivera Crespo","address":"Carretera 818 Km 4.3, Corozal PR 00783","entity":"PR","units":6,"expectedRent":3135,"status":"Active","notes":"6-Plex Multifamily"},{"id":"p5","name":"Casa #5 Río Plantation","address":"Urb. Río Plantation #5, Calle 6 E, Bayamón, PR 00961","entity":"PR","units":3,"expectedRent":2700,"status":"Active","notes":"3-Plex Multifamily"}],"tenants":[{"id":"t1","name":"Marcellius Smith","phone":"904-847-4470","email":"marcellius.smith84@gmail.com","propertyId":"p1","unit":"Main","leaseStart":"2025-09-01","leaseEnd":"2027-08-31","rent":1630,"deposit":1275,"status":"Active","notes":"","coTenantGroup":""},{"id":"t2","name":"Briana K. Pray","phone":"904-847-4470","email":"brianapraylpn@gmail.com","propertyId":"p2","unit":"Main","leaseStart":"2025-09-15","leaseEnd":"2026-09-30","rent":1855,"deposit":1275,"status":"Active","notes":"Pet cat Kairo. $30 pet fee + $95 maintenance.","coTenantGroup":""},{"id":"t3","name":"Brittany Steward","phone":"904-988-6325","email":"brittanysteward95@yahoo.com","propertyId":"p3","unit":"Main","leaseStart":"2025-09-01","leaseEnd":"2026-09-30","rent":1980,"deposit":1880,"status":"Active","notes":"Owes $1280 from May 2025.","coTenantGroup":""},{"id":"t4","name":"José A. Rivera","phone":"407-954-5845","email":"jayco432@gmail.com","propertyId":"p4","unit":"Apt. 1","leaseStart":"2026-02-20","leaseEnd":"2027-02-28","rent":570,"deposit":570,"status":"Active","notes":"1st Level Right Front. Utilities not included.","coTenantGroup":"p4-apt1"},{"id":"t5","name":"Zuleika Domingo","phone":"407-431-7550","email":"zdomingos@gmail.com","propertyId":"p4","unit":"Apt. 1","leaseStart":"2026-02-20","leaseEnd":"2027-02-28","rent":570,"deposit":570,"status":"Active","notes":"Co-tenant with José A. Rivera.","coTenantGroup":"p4-apt1"},{"id":"t6","name":"Grisselle B. Cruz","phone":"787-554-7732","email":"dwbh.2013@yahoo.com","propertyId":"p4","unit":"Apt. 2","leaseStart":"2025-05-01","leaseEnd":"2026-04-30","rent":560,"deposit":560,"status":"Active","notes":"1st Level Left Front. Utilities not included.","coTenantGroup":""},{"id":"t7","name":"Karina Rivera Ortíz","phone":"787-371-1577","email":"karina0447@yahoo.com","propertyId":"p4","unit":"Apt. 3","leaseStart":"2025-04-07","leaseEnd":"2026-03-30","rent":580,"deposit":580,"status":"Active","notes":"2nd Level Center Front. Utilities included.","coTenantGroup":""},{"id":"t8","name":"Bethmary Cruz Anselmo","phone":"939-777-4686","email":"bethcruz03@icloud.com","propertyId":"p4","unit":"Apt. 4","leaseStart":"2025-04-07","leaseEnd":"2026-03-31","rent":550,"deposit":550,"status":"Active","notes":"2nd Level Left Front. Utilities included.","coTenantGroup":"p4-apt4"},{"id":"t9","name":"Leianis Rivera Rivera","phone":"787-387-2944","email":"leianisrivera@gmail.com","propertyId":"p4","unit":"Apt. 4","leaseStart":"2025-04-07","leaseEnd":"2026-03-31","rent":550,"deposit":550,"status":"Active","notes":"Co-tenant with Bethmary Cruz.","coTenantGroup":"p4-apt4"},{"id":"t10","name":"José E. Crespo","phone":"787-613-3891","email":"crispicrespo@gmail.com","propertyId":"p4","unit":"Apt. 5","leaseStart":"2024-03-01","leaseEnd":"2029-02-28","rent":200,"deposit":0,"status":"Active","notes":"Owner's brother. Storage unit.","coTenantGroup":""},{"id":"t11","name":"Cristal Rosado Rosado","phone":"787-371-1577","email":"karina0447@yahoo.com","propertyId":"p4","unit":"Apt. 6 (La Casita)","leaseStart":"2025-07-28","leaseEnd":"2026-09-30","rent":685,"deposit":675,"status":"Active","notes":"Month-to-month from 02/01/2026.","coTenantGroup":""},{"id":"t12","name":"Jessica Fernández Córdova","phone":"787-371-2493","email":"fernandezjessica1979@gmail.com","propertyId":"p5","unit":"Apt. 1","leaseStart":"2025-12-01","leaseEnd":"2026-11-30","rent":615,"deposit":600,"status":"Active","notes":"2nd Level Front. Utilities included.","coTenantGroup":"p5-apt1"},{"id":"t13","name":"Carlos \"Tito\" González Rivera","phone":"787-906-2352","email":"titogonzalez923@gmail.com","propertyId":"p5","unit":"Apt. 1","leaseStart":"2025-12-01","leaseEnd":"2026-11-30","rent":615,"deposit":600,"status":"Active","notes":"Co-tenant with Jessica Fernández.","coTenantGroup":"p5-apt1"},{"id":"t14","name":"Vanessa N. Rivera Franco","phone":"939-232-3827","email":"vnriverafranco@gmail.com","propertyId":"p5","unit":"Apt. 2","leaseStart":"2025-04-01","leaseEnd":"2027-03-31","rent":750,"deposit":730,"status":"Active","notes":"2nd Level. Utilities included.","coTenantGroup":""},{"id":"t15","name":"TBD","phone":"","email":"","propertyId":"p5","unit":"Apt. 3","leaseStart":"","leaseEnd":"","rent":1300,"deposit":1300,"status":"Vacant","notes":"1st Level. Utilities included.","coTenantGroup":""}],"payments":[{"id":"pay001","tenantId":"t3","month":"2026-01","dateReceived":"2026-02-03","amountDue":1980,"amountPaid":1500,"method":"Zelle","status":"Paid","notes":"Partial payment Dec 2025"},{"id":"pay002","tenantId":"t3","month":"2026-01","dateReceived":"2026-02-07","amountDue":1980,"amountPaid":500,"method":"Zelle","status":"Paid","notes":"Second partial Dec 2025 — balance cleared"},{"id":"pay004","tenantId":"t2","month":"2026-01","dateReceived":"2025-12-24","amountDue":1855,"amountPaid":1866,"method":"CashApp","status":"Paid","notes":"December 2025 rent"},{"id":"pay005","tenantId":"t1","month":"2026-01","dateReceived":"2025-12-29","amountDue":1630,"amountPaid":1630,"method":"Zelle","status":"Paid","notes":"December 2025 rent"},{"id":"pay006","tenantId":"t12","month":"2026-02","dateReceived":"2026-01-29","amountDue":615,"amountPaid":615,"method":"ATH Móvil","status":"Paid","notes":"February 2026 rent"},{"id":"pay007","tenantId":"t14","month":"2026-03","dateReceived":"2026-02-27","amountDue":750,"amountPaid":375,"method":"ATH Móvil","status":"Paid","notes":"Partial payment February 2026"},{"id":"pay1772313069177","tenantId":"t14","month":"2026-03","dateReceived":"2026-02-28","amountDue":750,"amountPaid":375,"method":"ATH Móvil","status":"Paid","notes":"Made by Samuel Gonzalez"},{"id":"pay1772315516503","tenantId":"t6","month":"2026-01","dateReceived":"2026-01-01","amountDue":560,"amountPaid":300,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772315564214","tenantId":"t6","month":"2026-01","dateReceived":"2026-02-02","amountDue":560,"amountPaid":260,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772315614252","tenantId":"t7","month":"2026-01","dateReceived":"2026-01-01","amountDue":580,"amountPaid":500,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772315671362","tenantId":"t7","month":"2026-01","dateReceived":"2026-02-03","amountDue":580,"amountPaid":80,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772315744710","tenantId":"t9","month":"2026-01","dateReceived":"2026-01-01","amountDue":550,"amountPaid":275,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772315914822","tenantId":"t9","month":"2026-01","dateReceived":"2026-01-03","amountDue":550,"amountPaid":275,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772315956232","tenantId":"t12","month":"2026-01","dateReceived":"2026-02-02","amountDue":615,"amountPaid":615,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772316191247","tenantId":"t10","month":"2026-01","dateReceived":"2026-01-06","amountDue":200,"amountPaid":200,"method":"Zelle","status":"Paid","notes":"NFCU"},{"id":"pay1772316493261","tenantId":"t11","month":"2026-01","dateReceived":"2026-01-16","amountDue":685,"amountPaid":685,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772316568446","tenantId":"t2","month":"2026-02","dateReceived":"2026-01-23","amountDue":1855,"amountPaid":1866,"method":"CashApp","status":"Paid","notes":""},{"id":"pay1772317281523","tenantId":"t14","month":"2026-02","dateReceived":"2026-01-30","amountDue":750,"amountPaid":385,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772317308839","tenantId":"t14","month":"2026-02","dateReceived":"2026-01-31","amountDue":750,"amountPaid":365,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772317440381","tenantId":"t6","month":"2026-02","dateReceived":"2026-01-31","amountDue":560,"amountPaid":300,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772317460653","tenantId":"t6","month":"2026-02","dateReceived":"2026-02-03","amountDue":560,"amountPaid":280,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772317737269","tenantId":"t3","month":"2026-02","dateReceived":"2026-02-01","amountDue":1980,"amountPaid":1980,"method":"Zelle","status":"Paid","notes":""},{"id":"pay1772317837409","tenantId":"t1","month":"2026-02","dateReceived":"2026-02-01","amountDue":1630,"amountPaid":1630,"method":"Zelle","status":"Paid","notes":""},{"id":"pay1772317903130","tenantId":"t10","month":"2026-02","dateReceived":"2026-02-01","amountDue":200,"amountPaid":200,"method":"Zelle","status":"Paid","notes":""},{"id":"pay1772317984468","tenantId":"t9","month":"2026-02","dateReceived":"2026-02-02","amountDue":550,"amountPaid":275,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772318041700","tenantId":"t9","month":"2026-02","dateReceived":"2026-02-03","amountDue":550,"amountPaid":275,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772318158045","tenantId":"t5","month":"2026-02","dateReceived":"2026-02-19","amountDue":570,"amountPaid":171,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772318238837","tenantId":"t11","month":"2026-02","dateReceived":"2026-02-19","amountDue":685,"amountPaid":685,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772318615139","tenantId":"t12","month":"2026-03","dateReceived":"2026-02-26","amountDue":615,"amountPaid":615,"method":"ATH Móvil","status":"Paid","notes":""},{"id":"pay1772318760096","tenantId":"t6","month":"2026-03","dateReceived":"2026-02-28","amountDue":560,"amountPaid":560,"method":"ATH Móvil","status":"Paid","notes":"2/28/26 & 3/2/26 Received Rent .."},{"id":"pay1772369158395","tenantId":"t9","month":"2026-03","dateReceived":"2026-03-01","amountDue":550,"amountPaid":550,"method":"ATH Móvil","status":"Paid","notes":"3/01/26 & 03/02/26 Received Rent"},{"id":"pay1772415869660","tenantId":"t1","month":"2026-03","dateReceived":"2026-03-02","amountDue":1630,"amountPaid":1630,"method":"Zelle","status":"Paid","notes":"To Chase Bank"},{"id":"pay1772508526011","tenantId":"t7","month":"2026-03","dateReceived":"2026-03-02","amountDue":580,"amountPaid":580,"method":"ATH Móvil","status":"Paid","notes":"Payments Received on 3/2/26 & 3/3/26"},{"id":"pay1772553606728","tenantId":"t3","month":"2026-03","dateReceived":"2026-03-03","amountDue":1980,"amountPaid":1975,"method":"Zelle","status":"Partial","notes":""},{"id":"pay1772594753779","tenantId":"t2","month":"2026-03","dateReceived":"2026-02-19","amountDue":1855,"amountPaid":1866,"method":"CashApp","status":"Paid","notes":""},{"id":"pay1772888538865","tenantId":"t5","month":"2026-03","dateReceived":"2026-03-06","amountDue":570,"amountPaid":270,"method":"ATH Móvil","status":"Paid","notes":""}],"receipts":[{"id":"r1772890631190","number":"210","tenantId":"t3","tenantName":"Brittany Steward","date":"2026-03-07","total":2040,"paid":2040,"balance":0,"lineItems":[{"desc":"March 2026 Rent","amount":"1975"},{"desc":"Balance Remaining — Mar 2026","amount":"65"}],"notes":"March 2026 Rent received via Zelle. Final $225 balance received on 2026-03-12. Thank you!","address":"1154 Le Brun Dr. JAX, FL 32205","entity":"FL"},{"id":"r1772889591628","number":"208","tenantId":"t4","tenantName":"José A. Rivera","date":"2026-03-07","total":570,"paid":570,"balance":0},{"id":"r1772889506368","number":"208","tenantId":"t5","tenantName":"Zuleika Domingo","date":"2026-03-07","total":570,"paid":570,"balance":0},{"id":"r1772889317367","number":"201","tenantId":"t14","tenantName":"Vanessa N. Rivera Franco","date":"2026-02-28","total":750,"paid":750,"balance":0},{"id":"r1772551485943","number":"206","tenantId":"t6","tenantName":"Grisselle B. Cruz","date":"2026-03-03","total":560,"paid":560,"balance":0},{"id":"r1772551002663","number":"205","tenantId":"t9","tenantName":"Leianis Rivera Rivera","date":"2026-03-03","total":550,"paid":550,"balance":0},{"id":"r1772547979942","number":"204","tenantId":"t7","tenantName":"Karina Rivera Ortíz","date":"2026-03-03","total":580,"paid":580,"balance":0},{"id":"r1772416292514","number":"203","tenantId":"t1","tenantName":"Marcellius Smith","date":"2026-03-02","total":1630,"paid":1630,"balance":0},{"id":"r1772416242477","number":"202","tenantId":"t1","tenantName":"Marcellius Smith","date":"2026-03-02","total":1630,"paid":1630,"balance":0},{"id":"r1772320913173","number":"201","tenantId":"t14","tenantName":"Vanessa N. Rivera Franco","date":"2026-02-28","total":750,"paid":750,"balance":0},{"id":"r1772319480865","number":"PR200","tenantId":"t14","tenantName":"Vanessa N. Rivera Franco","date":"2026-02-28","total":750,"paid":750,"balance":0},{"id":"r1","number":"PR176","tenantId":"t6","tenantName":"Grisselle B. Cruz","date":"2026-01-02","total":560,"paid":560,"balance":0},{"id":"r2","number":"PR177","tenantId":"t3","tenantName":"Brittany Steward","date":"2026-02-02","total":1980,"paid":1980,"balance":0},{"id":"r3","number":"PR196","tenantId":"t2","tenantName":"Briana K. Pray","date":"2026-02-20","total":1866,"paid":1866,"balance":0}],"nextReceiptNum":211};
+  Object.assign(DB, seed);
+  saveDB();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SETTINGS — BACKUP / RESTORE / RESET
+// ═══════════════════════════════════════════════════════════
+function exportBackup(){
+  const d=new Date();
+  const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`KeredanRMS_Backup_${ds}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importBackup(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(!data.properties||!data.tenants){alert('Invalid backup file. Please select a valid KeredanRMS backup.');return;}
+      Object.assign(DB,data);
+      saveDB();
+      alert('✅ Backup imported successfully! Reloading...');
+      location.reload();
+    }catch(err){alert('Error reading backup file: '+err.message);}
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+function confirmReset(){
+  document.getElementById('reset-confirm-banner').style.display='block';
+  document.getElementById('reset-confirm-banner').scrollIntoView({behavior:'smooth'});
+}
+
+function executeReset(){
+  localStorage.removeItem(DB_KEY);
+  alert('Data reset. Reloading with seed data...');
+  location.reload();
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION — THE COMMAND CENTER
+// ═══════════════════════════════════════════════════════════
+const PAGE_TITLES={dashboard:'Dashboard',properties:'Properties',tenants:'Tenants',payments:'Payments',receipts:'Receipt Generator',leases:'Lease Tracker',reports:'Reports',settings:'Settings'};
+
+function navigateTo(page,opts={}){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const pageEl=document.getElementById('page-'+page);
+  if(pageEl) pageEl.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+page+"'"))n.classList.add('active');});
+  document.getElementById('topbar-title').textContent=PAGE_TITLES[page]||page;
+
+  // Reset banners
+  ['tenants-filter-banner','payments-filter-banner','leases-filter-banner'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.classList.add('hidden');el.className='alert-filter-banner hidden';}
+  });
+
+  // Apply filters from opts
+  if(page==='tenants'){
+    if(opts.status){document.getElementById('tenant-filter-status').value=opts.status;}
+    if(opts.entity){document.getElementById('tenant-filter-entity').value=opts.entity;}
+    renderTenants(opts.bannerMsg,opts.bannerType);
+  } else if(page==='payments'){
+    if(opts.month){document.getElementById('pay-filter-month').value=opts.month;}
+    if(opts.status){document.getElementById('pay-filter-status').value=opts.status;}
+    if(opts.entity){document.getElementById('pay-filter-entity').value=opts.entity;}
+    renderPayments(opts.bannerMsg,opts.bannerType);
+  } else if(page==='leases'){
+    renderLeases(opts.bannerMsg,opts.bannerType);
+  } else if(page==='properties'){
+    renderProperties();
+  } else if(page==='receipts'){
+    populateReceiptForm();
+  } else if(page==='reports'){
+    renderReports();
+  } else if(page==='dashboard'){
+    renderDashboard();
+  }
+}
+
+// Click handler for Outstanding stat card — goes to payments filtered to overdue/partial
+function navigateToOutstanding(){
+  document.getElementById('pay-filter-status').value='';
+  navigateTo('payments',{
+    bannerMsg:'⚠️ Showing overdue & partial payments — tenants with outstanding balances.',
+    bannerType:'danger',
+    status:''
+  });
+  // After render, re-filter to show only non-paid
+  setTimeout(()=>{
+    document.getElementById('pay-filter-status').value='Overdue';
+    renderPayments('⚠️ Filtered to Overdue payments. Use status dropdown to adjust.','danger');
+  },50);
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENT ROLL (co-tenant aware)
+// ═══════════════════════════════════════════════════════════
+function calcRentRoll(tenants){
+  const seen=new Set();
+  return tenants.reduce((sum,t)=>{
+    if(t.status==='Vacant'||t.status==='Inactive') return sum;
+    if(t.coTenantGroup){
+      if(seen.has(t.coTenantGroup)) return sum;
+      seen.add(t.coTenantGroup);
+    }
+    return sum+Number(t.rent||0);
+  },0);
+}
+
+// ═══════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════
+function renderDashboard(){
+  const now=new Date();
+  const monthStr=now.toLocaleString('en-US',{month:'long',year:'numeric'});
+  document.getElementById('dash-month-label').textContent=monthStr;
+
+  const activeProps=DB.properties.filter(p=>p.status==='Active');
+  const activeTenants=DB.tenants.filter(t=>t.status==='Active');
+  const allRent=calcRentRoll(DB.tenants);
+
+  // Collected this month
+  const thisMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const monthPayments=DB.payments.filter(p=>p.month===thisMonth);
+  const collected=monthPayments.reduce((s,p)=>s+Number(p.amountPaid||0),0);
+
+  // Outstanding
+  const outstanding=DB.payments.reduce((s,p)=>{
+    const bal=Number(p.amountDue||0)-Number(p.amountPaid||0);
+    return s+(bal>0?bal:0);
+  },0);
+
+  // Expiring leases (90 days)
+  const in90=new Date(now); in90.setDate(in90.getDate()+90);
+  const expiringCount=DB.tenants.filter(t=>{
+    if(!t.leaseEnd||t.status!=='Active') return false;
+    const end=new Date(t.leaseEnd);
+    return end>=now&&end<=in90;
+  }).length;
+
+  // Receipt stats
+  const receiptCount=DB.receipts.length;
+  const nextNum='PR'+DB.nextReceiptNum;
+
+  document.getElementById('stat-properties').textContent=activeProps.length;
+  document.getElementById('stat-properties-sub').textContent=`${DB.properties.filter(p=>p.entity==='FL'&&p.status==='Active').length} FL · ${DB.properties.filter(p=>p.entity==='PR'&&p.status==='Active').length} PR`;
+  document.getElementById('stat-tenants').textContent=activeTenants.length;
+  document.getElementById('stat-tenants-sub').textContent=`${DB.tenants.filter(t=>t.status==='Active'&&getProperty(t.propertyId)?.entity==='FL').length} FL · ${DB.tenants.filter(t=>t.status==='Active'&&getProperty(t.propertyId)?.entity==='PR').length} PR`;
+  document.getElementById('stat-receipts').textContent=receiptCount;
+  document.getElementById('stat-next-receipt').textContent=nextNum;
+  document.getElementById('stat-collected').textContent=fmt(collected);
+  document.getElementById('stat-collected-sub').textContent=`of ${fmt(allRent)} expected`;
+  document.getElementById('stat-outstanding').textContent=fmt(outstanding);
+  document.getElementById('stat-outstanding-sub').textContent=outstanding>0?`Across ${DB.payments.filter(p=>(p.amountDue-p.amountPaid)>0).length} payment(s)`:'All clear ✓';
+  document.getElementById('stat-leases-expiring').textContent=expiringCount;
+
+  // Property progress
+  renderPropertyProgress('FL','fl-progress-body');
+  renderPropertyProgress('PR','pr-progress-body');
+
+  // Recent payments
+  const recent=[...DB.payments].sort((a,b)=>new Date(b.dateReceived||b.month)-new Date(a.dateReceived||a.month)).slice(0,6);
+  const tbody=document.getElementById('dash-payments-body');
+  if(!recent.length){tbody.innerHTML='<tr><td colspan="6" class="empty-state" style="padding:30px;text-align:center;color:var(--gray-400)">No payments recorded yet</td></tr>';return;}
+  tbody.innerHTML=recent.map(p=>{
+    const t=getTenant(p.tenantId);
+    const prop=getProperty(t?.propertyId);
+    return `<tr>
+      <td><strong>${t?.name||'—'}</strong></td>
+      <td style="font-size:12px">${prop?.name||'—'}</td>
+      <td>${fmtMonth(p.month)}</td>
+      <td>${fmt(p.amountPaid)}</td>
+      <td><span class="tag">${p.method}</span></td>
+      <td>${statusBadge(p.status)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPropertyProgress(entity,containerId){
+  const props=DB.properties.filter(p=>p.entity===entity&&p.status==='Active');
+  const container=document.getElementById(containerId);
+  if(!props.length){container.innerHTML='<p style="color:var(--gray-400);font-size:13px">No properties</p>';return;}
+  const now=new Date();
+  const thisMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  container.innerHTML=props.map(prop=>{
+    const propTenants=DB.tenants.filter(t=>t.propertyId===prop.id);
+    const expected=calcRentRoll(propTenants);
+    const collected=DB.payments.filter(p=>{
+      const t=getTenant(p.tenantId);
+      return t?.propertyId===prop.id&&p.month===thisMonth;
+    }).reduce((s,p)=>s+Number(p.amountPaid||0),0);
+    const pct=expected>0?Math.min(100,Math.round(collected/expected*100)):0;
+    const color=pct>=100?'success':pct>=50?'':'danger';
+    return `<div class="prop-progress-row">
+      <div class="prop-progress-header">
+        <span style="font-weight:600;font-size:13px">${prop.name}</span>
+        <span style="font-size:12px;color:var(--gray-500)">${fmt(collected)} / ${fmt(expected)}</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill ${color}" style="width:${pct}%"></div></div>
+      <div style="font-size:11px;color:var(--gray-400);margin-top:3px">${pct}% collected this month</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// PROPERTIES
+// ═══════════════════════════════════════════════════════════
+function renderProperties(){
+  const container=document.getElementById('properties-list');
+  container.innerHTML=DB.properties.map(p=>{
+    const tenants=DB.tenants.filter(t=>t.propertyId===p.id&&t.status==='Active');
+    const rent=calcRentRoll(DB.tenants.filter(t=>t.propertyId===p.id));
+    return `<div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div class="flex-row">
+          <span class="card-title">${p.name}</span>
+          <span class="tag ${p.entity==='FL'?'tag-fl':'tag-pr'}">${p.entity==='FL'?'FL LLC':'PR DBA'}</span>
+          <span class="badge ${p.status==='Active'?'badge-success':'badge-gray'}">${p.status}</span>
+        </div>
+        <div class="flex-row">
+          <button class="btn btn-ghost btn-sm" style="margin-right:6px" onclick="openEditProperty('${p.id}')">✏️ Edit</button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteProperty('${p.id}')">Delete</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;font-size:13px">
+          <div><div style="color:var(--gray-500);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Address</div>${p.address}</div>
+          <div><div style="color:var(--gray-500);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Units</div>${p.units}</div>
+          <div><div style="color:var(--gray-500);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Active Tenants</div>${tenants.length}</div>
+          <div><div style="color:var(--gray-500);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Rent Roll</div><strong>${fmt(rent)}/mo</strong></div>
+        </div>
+        ${p.notes?`<div style="margin-top:12px;font-size:12px;color:var(--gray-500);background:var(--gray-50);padding:8px 12px;border-radius:6px">📝 ${p.notes}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// TENANTS
+// ═══════════════════════════════════════════════════════════
+function renderTenants(bannerMsg,bannerType){
+  const statusFilter=document.getElementById('tenant-filter-status').value;
+  const entityFilter=document.getElementById('tenant-filter-entity').value;
+  let tenants=DB.tenants;
+  if(statusFilter) tenants=tenants.filter(t=>t.status===statusFilter);
+  if(entityFilter) tenants=tenants.filter(t=>{
+    const p=getProperty(t.propertyId);
+    return p?.entity===entityFilter;
+  });
+
+  const banner=document.getElementById('tenants-filter-banner');
+  if(bannerMsg){
+    banner.textContent=bannerMsg;
+    banner.className='alert-filter-banner'+(bannerType==='danger'?' danger-banner':bannerType==='warning'?' warning-banner':'');
+  } else {
+    banner.className='alert-filter-banner hidden';
+  }
+
+  const tbody=document.getElementById('tenants-body');
+  if(!tenants.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--gray-400)">No tenants found</td></tr>';return;}
+  tbody.innerHTML=tenants.map(t=>{
+    const prop=getProperty(t.propertyId);
+    const today=new Date();
+    const leaseEnd=t.leaseEnd?new Date(t.leaseEnd):null;
+    const daysLeft=leaseEnd?Math.ceil((leaseEnd-today)/(1000*60*60*24)):null;
+    return `<tr>
+      <td><strong>${t.name}</strong><br><span style="font-size:11px;color:var(--gray-400)">${t.email||''}</span></td>
+      <td>${prop?.name||'—'}<br><span style="font-size:11px;color:var(--gray-400)">${t.unit||''}</span></td>
+      <td><span class="tag ${prop?.entity==='FL'?'tag-fl':'tag-pr'}">${prop?.entity==='FL'?'FL LLC':'PR DBA'}</span></td>
+      <td>${fmt(t.rent)}</td>
+      <td style="font-size:12px">${t.leaseStart||'—'} → <span class="${daysLeft!==null&&daysLeft<=30?'expiry-soon':daysLeft!==null&&daysLeft<=90?'expiry-warn':''}">${t.leaseEnd||'—'}</span></td>
+      <td><span class="badge ${t.status==='Active'?'badge-success':t.status==='Vacant'?'badge-warning':'badge-gray'}">${t.status}</span></td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openEditTenant('${t.id}')">Edit</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// PAYMENTS
+// ═══════════════════════════════════════════════════════════
+function renderPayments(bannerMsg,bannerType){
+  const monthFilter=document.getElementById('pay-filter-month').value;
+  const statusFilter=document.getElementById('pay-filter-status').value;
+  const entityFilter=document.getElementById('pay-filter-entity').value;
+
+  const banner=document.getElementById('payments-filter-banner');
+  if(bannerMsg){
+    banner.textContent=bannerMsg;
+    banner.className='alert-filter-banner'+(bannerType==='danger'?' danger-banner':bannerType==='warning'?' warning-banner':'');
+  } else {
+    banner.className='alert-filter-banner hidden';
+  }
+
+  let payments=[...DB.payments].sort((a,b)=>b.month.localeCompare(a.month));
+  if(monthFilter) payments=payments.filter(p=>p.month===monthFilter);
+  if(statusFilter) payments=payments.filter(p=>p.status===statusFilter);
+  if(entityFilter) payments=payments.filter(p=>{
+    const t=getTenant(p.tenantId);
+    return getProperty(t?.propertyId)?.entity===entityFilter;
+  });
+
+  const tbody=document.getElementById('payments-body');
+  if(!payments.length){tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--gray-400)">No payments found</td></tr>';return;}
+  tbody.innerHTML=payments.map(p=>{
+    const t=getTenant(p.tenantId);
+    const bal=Number(p.amountDue||0)-Number(p.amountPaid||0);
+    return `<tr>
+      <td><strong>${t?.name||'—'}</strong></td>
+      <td style="font-size:12px">${getProperty(t?.propertyId)?.name||'—'}</td>
+      <td>${fmtMonth(p.month)}</td>
+      <td>${fmt(p.amountDue)}</td>
+      <td class="text-success fw600">${fmt(p.amountPaid)}</td>
+      <td class="${bal>0?'text-danger fw600':'text-success'}">${fmt(bal)}</td>
+      <td><span class="tag">${p.method}</span></td>
+      <td style="font-size:12px">${p.dateReceived||'—'}</td>
+      <td>${statusBadge(p.status)}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="openEditPayment('${p.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePayment('${p.id}')">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function populateMonthFilter(){
+  const sel=document.getElementById('pay-filter-month');
+  const months=new Set(DB.payments.map(p=>p.month));
+  const now=new Date();
+  const thisMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  if(!months.has(thisMonth)) months.add(thisMonth);
+  const sorted=[...months].sort().reverse();
+  const cur=sel.value;
+  sel.innerHTML='<option value="">All Months</option>'+sorted.map(m=>`<option value="${m}" ${m===cur?'selected':''}>${fmtMonth(m)}</option>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// LEASE TRACKER
+// ═══════════════════════════════════════════════════════════
+function renderLeases(bannerMsg,bannerType){
+  const banner=document.getElementById('leases-filter-banner');
+  if(bannerMsg){
+    banner.textContent=bannerMsg;
+    banner.className='alert-filter-banner'+(bannerType==='warning'?' warning-banner':'');
+  } else {
+    banner.className='alert-filter-banner hidden';
+  }
+
+  const today=new Date();
+  const sorted=[...DB.tenants].sort((a,b)=>{
+    if(!a.leaseEnd) return 1;
+    if(!b.leaseEnd) return -1;
+    return new Date(a.leaseEnd)-new Date(b.leaseEnd);
+  });
+
+  document.getElementById('leases-body').innerHTML=sorted.map(t=>{
+    const prop=getProperty(t.propertyId);
+    const leaseEnd=t.leaseEnd?new Date(t.leaseEnd):null;
+    const daysLeft=leaseEnd?Math.ceil((leaseEnd-today)/(1000*60*60*24)):null;
+    let expiryClass='',expiryLabel='';
+    if(daysLeft===null){expiryLabel='—';}
+    else if(daysLeft<0){expiryClass='text-danger';expiryLabel='Expired';}
+    else if(daysLeft<=30){expiryClass='expiry-soon';expiryLabel=daysLeft+' days';}
+    else if(daysLeft<=90){expiryClass='expiry-warn';expiryLabel=daysLeft+' days';}
+    else{expiryLabel=daysLeft+' days';}
+    return `<tr>
+      <td><strong>${t.name}</strong></td>
+      <td>${prop?.name||'—'} · ${t.unit||''}</td>
+      <td style="font-size:12px">${t.leaseStart||'—'}</td>
+      <td style="font-size:12px">${t.leaseEnd||'—'}</td>
+      <td class="${expiryClass} fw600">${expiryLabel}</td>
+      <td>${statusBadge(t.status)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// RECEIPTS
+// ═══════════════════════════════════════════════════════════
+let lineItems=[];
+let editingReceiptId=null;
+
+function editReceiptById(id){
+  const r=DB.receipts.find(x=>x.id===id);
+  if(!r){alert('Receipt not found.');return;}
+  editingReceiptId=id;
+  document.getElementById('receipt-form-title').textContent=`Editing Receipt ${r.number}`;
+  document.getElementById('cancel-edit-btn').style.display='';
+  document.getElementById('rec-number').value=r.number;
+  document.getElementById('rec-date').value=r.date;
+  if(r.entity) document.getElementById('rec-entity').value=r.entity;
+  // populate tenant dropdown then set value
+  const sel=document.getElementById('rec-tenant');
+  const opt=sel.querySelector(`option[value="${r.tenantId}"]`);
+  if(opt){sel.value=r.tenantId;}
+  if(r.address) document.getElementById('rec-address').value=r.address;
+  if(r.notes) document.getElementById('rec-notes').value=r.notes;
+  document.getElementById('rec-paid').value=r.paid;
+  lineItems=r.lineItems?JSON.parse(JSON.stringify(r.lineItems)):[{desc:'Rent Payment',amount:String(r.total)}];
+  renderLineItems();
+  calcReceiptTotals();
+  // scroll form into view
+  document.querySelector('.receipt-form').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function cancelReceiptEdit(){
+  editingReceiptId=null;
+  document.getElementById('receipt-form-title').textContent='Generate New Receipt';
+  document.getElementById('cancel-edit-btn').style.display='none';
+  populateReceiptForm();
+}
+
+function redownloadReceipt(id){
+  const r=DB.receipts.find(x=>x.id===id);
+  if(!r||!r.lineItems){alert('Full receipt data not available for re-download. This receipt was created before the edit feature was added.');return;}
+  // Temporarily load into form and trigger PDF without saving
+  const savedEditing=editingReceiptId;
+  editingReceiptId='__redownload__';
+  document.getElementById('rec-number').value=r.number;
+  document.getElementById('rec-date').value=r.date;
+  if(r.entity) document.getElementById('rec-entity').value=r.entity;
+  const sel=document.getElementById('rec-tenant');
+  const opt=sel.querySelector(`option[value="${r.tenantId}"]`);
+  if(opt) sel.value=r.tenantId;
+  if(r.address) document.getElementById('rec-address').value=r.address;
+  if(r.notes) document.getElementById('rec-notes').value=r.notes;
+  document.getElementById('rec-paid').value=r.paid;
+  lineItems=JSON.parse(JSON.stringify(r.lineItems));
+  renderLineItems();
+  calcReceiptTotals();
+  // generate PDF — the save block will detect __redownload__ and skip DB write
+  generatePDF();
+  // restore state after brief delay
+  setTimeout(()=>{
+    editingReceiptId=savedEditing;
+    if(!savedEditing) cancelReceiptEdit();
+  },500);
+}
+
+function populateReceiptForm(){
+  const numEl=document.getElementById('rec-number');
+  numEl.value='PR'+DB.nextReceiptNum;
+  document.getElementById('rec-date').value=new Date().toISOString().split('T')[0];
+
+  const sel=document.getElementById('rec-tenant');
+  sel.innerHTML='<option value="">— Select Tenant —</option>'+DB.tenants.filter(t=>t.status==='Active').map(t=>{
+    const p=getProperty(t.propertyId);
+    return `<option value="${t.id}">${t.name} (${p?.name||''})</option>`;
+  }).join('');
+
+  lineItems=[{desc:'Rent Payment',amount:''}];
+  renderLineItems();
+  renderReceiptLog();
+  calcReceiptTotals();
+}
+
+function renderLineItems(){
+  const c=document.getElementById('line-items-container');
+  c.innerHTML=lineItems.map((li,i)=>`
+    <div class="line-item-row">
+      <input type="text" placeholder="Description" value="${li.desc}" oninput="lineItems[${i}].desc=this.value"/>
+      <input type="number" placeholder="$0.00" value="${li.amount}" style="width:120px" oninput="lineItems[${i}].amount=this.value;calcReceiptTotals()"/>
+      <button class="remove-line" onclick="removeLineItem(${i})">×</button>
+    </div>`).join('');
+}
+
+function addLineItem(){lineItems.push({desc:'',amount:''});renderLineItems();}
+function removeLineItem(i){if(lineItems.length>1){lineItems.splice(i,1);renderLineItems();calcReceiptTotals();}}
+
+function calcReceiptTotals(){
+  const subtotal=lineItems.reduce((s,li)=>s+Number(li.amount||0),0);
+  const paid=Number(document.getElementById('rec-paid').value||0);
+  const balance=subtotal-paid;
+  document.getElementById('rec-subtotal').textContent=fmt(subtotal);
+  document.getElementById('rec-total').textContent=fmt(subtotal);
+  document.getElementById('rec-paid-display').textContent=fmt(paid);
+  document.getElementById('rec-balance').textContent=fmt(balance);
+}
+
+function autoFillTenant(){
+  const sel=document.getElementById('rec-tenant');
+  const t=getTenant(sel.value);
+  if(!t) return;
+  const p=getProperty(t.propertyId);
+  document.getElementById('rec-address').value=`${p?.address||''}, ${t.unit||''}`.replace(', ,',',');
+  document.getElementById('rec-entity').value=p?.entity==='PR'?'PR':'FL';
+  lineItems=[{desc:`${fmtMonthFromDate(document.getElementById('rec-date').value)} Rent`,amount:String(t.rent)}];
+  document.getElementById('rec-paid').value=t.rent;
+  renderLineItems();
+  calcReceiptTotals();
+}
+
+function fmtMonthFromDate(d){
+  if(!d) return '';
+  const dt=new Date(d+'T12:00:00');
+  return dt.toLocaleString('en-US',{month:'long',year:'numeric'});
+}
+
+function generatePDF(){
+  const num=document.getElementById('rec-number').value;
+  const dateStr=document.getElementById('rec-date').value;
+  const entity=document.getElementById('rec-entity').value;
+  const tenantId=document.getElementById('rec-tenant').value;
+  const t=getTenant(tenantId);
+  const address=document.getElementById('rec-address').value;
+  const notes=document.getElementById('rec-notes').value;
+  const paid=Number(document.getElementById('rec-paid').value||0);
+  const subtotal=lineItems.reduce((s,li)=>s+Number(li.amount||0),0);
+  const balance=subtotal-paid;
+  const sigFile=document.getElementById('rec-signature').files[0];
+
+  if(!num||!dateStr||!t){alert('Please fill in Receipt #, Date, and select a Tenant.');return;}
+
+  const doGenerate=(sigDataUrl,sigW,sigH)=>{
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({unit:'pt',format:'letter'});
+    const W=612,H=792;
+    const margin=45;
+
+    // Header background
+    doc.setFillColor(248,250,252);
+    doc.rect(0,0,W,H,'F');
+    doc.setFillColor(255,255,255);
+    doc.rect(margin-10,margin-10,W-2*(margin-10),H-2*(margin-10),'F');
+
+    // Landlord info
+    const isFL=entity==='FL';
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(13);
+    doc.setTextColor(26,31,46);
+    if(isFL){
+      doc.text('Roldan J. Crespo, Member Manager',margin,margin+15);
+    } else {
+      doc.text('Roldán J. Crespo',margin,margin+15);
+    }
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(10);
+    doc.setTextColor(71,85,105);
+    const bizName=isFL?'Keredan Home Solutions, LLC Florida':'DBA, Keredan Home Solutions Puerto Rico';
+    doc.text(bizName,margin,margin+30);
+    doc.text('904-674-9436',margin,margin+44);
+    doc.text('keredan.hs@gmail.com',margin,margin+58);
+
+    // TO section
+    const toX=W-margin-180;
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.setTextColor(23,162,184);
+    doc.text('TO:',toX,margin+15);
+    doc.setFont('helvetica','normal');
+    doc.setTextColor(26,31,46);
+    doc.text(t.name,toX+22,margin+15);
+    if(t.phone) doc.text(t.phone,toX+22,margin+28);
+    if(t.email) doc.text(t.email,toX+22,margin+41);
+    const addrLines=doc.splitTextToSize(address,180);
+    doc.text(addrLines,toX+22,margin+54);
+
+    // Teal divider bar
+    const barY=margin+80;
+    doc.setFillColor(23,162,184);
+    doc.rect(margin-10,barY,W-2*(margin-10),5,'F');
+
+    // Receipt title
+    const bodyY=barY+35;
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(28);
+    doc.setTextColor(26,31,46);
+    doc.text('Receipt',margin,bodyY);
+    doc.setTextColor(23,162,184);
+    doc.text(num,margin+90,bodyY);
+
+    // Receipt # label
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(10);
+    doc.setTextColor(100,116,139);
+    doc.text('#',margin,bodyY+16);
+
+    // Date
+    const dt=new Date(dateStr+'T12:00:00');
+    const dateLabel=dt.toLocaleString('en-US',{month:'short',day:'2-digit',year:'numeric'});
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(13);
+    doc.setTextColor(148,163,184);
+    doc.text(dateLabel,W-margin-80,bodyY);
+
+    // Line items
+    let itemY=bodyY+45;
+    lineItems.forEach(li=>{
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(11);
+      doc.setTextColor(26,31,46);
+      doc.text('Qty: 1',margin,itemY);
+      if(li.desc){
+        doc.setFont('helvetica','normal');
+        doc.text(li.desc,margin+55,itemY);
+      }
+      doc.setFont('helvetica','normal');
+      doc.setTextColor(26,31,46);
+      doc.text(`$ ${Number(li.amount||0).toFixed(2)}`,W-margin-60,itemY);
+      itemY+=22;
+    });
+
+    // Other Info + Totals section
+    const otherY=Math.max(itemY+30, bodyY+140);
+
+    // Other Info
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(11);
+    doc.setTextColor(26,31,46);
+    doc.text('Other Info',margin,otherY);
+    if(notes){
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(10);
+      const noteLines=doc.splitTextToSize(notes,200);
+      doc.text(noteLines,margin,otherY+16);
+    }
+
+    // Totals (right side)
+    const totX=W-margin-160;
+    let totY=otherY;
+    const totRow=(label,val,bold,color)=>{
+      doc.setFont('helvetica',bold?'bold':'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(color||100,color?undefined:116,color?undefined:139);
+      doc.text(label,totX,totY);
+      doc.text(`$ ${Number(val).toFixed(2)}`,W-margin-5,totY,{align:'right'});
+      totY+=20;
+    };
+    totRow('Subtotal',subtotal);
+    totRow('Tax',0);
+    doc.setDrawColor(203,213,225);
+    doc.line(totX,totY-8,W-margin,totY-8);
+    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(26,31,46);
+    doc.text('Total',totX,totY);
+    doc.text(`$ ${subtotal.toFixed(2)}`,W-margin-5,totY,{align:'right'});
+    totY+=24;
+    totRow('Paid amount',paid);
+    doc.setDrawColor(203,213,225);
+    doc.line(totX,totY-8,W-margin,totY-8);
+    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(26,31,46);
+    doc.text('Balance due',totX,totY);
+    doc.setTextColor(balance>0?239:16,balance>0?68:185,balance>0?68:129);
+    doc.text(`$ ${balance.toFixed(2)}`,W-margin-5,totY,{align:'right'});
+
+    // Signature
+    const sigY=H-margin-60;
+    doc.setDrawColor(203,213,225);
+    doc.line(margin,sigY,margin+160,sigY);
+    doc.line(W-margin-100,sigY,W-margin,sigY);
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(148,163,184);
+    doc.text('Signature',margin,sigY+12);
+    doc.text('Date',W-margin-100,sigY+12);
+
+    // Date on receipt
+    const sigDateStr=`${dt.getDate().toString().padStart(2,'0')}/${dt.toLocaleString('en-US',{month:'short'})}/${dt.getFullYear()}`;
+    doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(26,31,46);
+    doc.text(sigDateStr,W-margin-100,sigY-6);
+
+    // Signature image
+    if(sigDataUrl){
+      const maxW=120,maxH=45;
+      let sw=sigW,sh=sigH;
+      if(sw>maxW){sh=sh*(maxW/sw);sw=maxW;}
+      if(sh>maxH){sw=sw*(maxH/sh);sh=maxH;}
+      try{doc.addImage(sigDataUrl,'JPEG',margin,sigY-sh-4,sw,sh);}catch(e){}
+    }
+
+    // Save
+    const lastName=t.name.split(' ').pop();
+    const mLabel=dt.toLocaleString('en-US',{month:'short'})+dt.getFullYear();
+    doc.save(`${num}_${lastName}_${mLabel}.pdf`);
+
+    // Log receipt — store full data for edit/re-download
+    const receiptRecord={id:'r'+Date.now(),number:num,tenantId:t.id,tenantName:t.name,date:dateStr,total:subtotal,paid,balance,lineItems:JSON.parse(JSON.stringify(lineItems)),notes,address,entity};
+    if(editingReceiptId==='__redownload__'){
+      // PDF only — no DB changes
+    } else if(editingReceiptId){
+      const idx=DB.receipts.findIndex(r=>r.id===editingReceiptId);
+      if(idx>-1){receiptRecord.id=editingReceiptId;DB.receipts[idx]=receiptRecord;}
+      editingReceiptId=null;
+      document.getElementById('receipt-form-title').textContent='Generate New Receipt';
+      document.getElementById('cancel-edit-btn').style.display='none';
+      saveDB();
+      renderReceiptLog();
+      alert(`✅ ${num} updated successfully!`);
+    } else {
+      DB.receipts.unshift(receiptRecord);
+      DB.nextReceiptNum++;
+      document.getElementById('rec-number').value='PR'+DB.nextReceiptNum;
+      saveDB();
+      renderReceiptLog();
+      alert(`✅ ${num} generated successfully!`);
+    }
+  };
+
+  if(sigFile){
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>doGenerate(e.target.result,img.width,img.height);
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(sigFile);
+  } else {
+    doGenerate(null,0,0);
+  }
+}
+
+function renderReceiptLog(){
+  const tbody=document.getElementById('receipt-log-body');
+  if(!DB.receipts.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--gray-400)">No receipts yet</td></tr>';return;}
+  tbody.innerHTML=DB.receipts.slice(0,20).map(r=>`<tr>
+    <td class="text-teal fw600">${r.number}</td>
+    <td>${r.tenantName}</td>
+    <td style="font-size:12px">${r.date}</td>
+    <td>${fmt(r.total)}</td>
+    <td class="${Number(r.balance)>0?'text-danger':'text-success'}">${fmt(r.balance)}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:11px;margin-right:4px" onclick="editReceiptById('${r.id}')">✏️ Edit</button>
+      ${r.lineItems?`<button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:11px" onclick="redownloadReceipt('${r.id}')">⬇ PDF</button>`:''}
+    </td>
+  </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// REPORTS
+// ═══════════════════════════════════════════════════════════
+function renderReports(){
+  renderMonthlyReport();
+  renderOutstandingReport();
+  // populate tenant select
+  const sel=document.getElementById('rpt-tenant-select');
+  sel.innerHTML='<option value="">— Select —</option>'+DB.tenants.filter(t=>t.status==='Active').map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+}
+
+function renderMonthlyReport(){
+  const months=new Set(DB.payments.map(p=>p.month));
+  const sorted=[...months].sort().reverse();
+  const allRent=calcRentRoll(DB.tenants);
+  const container=document.getElementById('rpt-monthly-body');
+  if(!sorted.length){container.innerHTML='<p style="color:var(--gray-400);text-align:center;padding:40px">No payment data yet</p>';return;}
+  container.innerHTML=`<div class="card"><div style="overflow-x:auto"><table class="data-table">
+    <thead><tr><th>Month</th><th>Expected</th><th>Collected</th><th>Outstanding</th><th>% Collected</th></tr></thead>
+    <tbody>${sorted.map(m=>{
+      const mPayments=DB.payments.filter(p=>p.month===m);
+      const collected=mPayments.reduce((s,p)=>s+Number(p.amountPaid||0),0);
+      const outstanding=mPayments.reduce((s,p)=>s+Math.max(0,Number(p.amountDue||0)-Number(p.amountPaid||0)),0);
+      const pct=allRent>0?Math.round(collected/allRent*100):0;
+      return `<tr>
+        <td><strong>${fmtMonth(m)}</strong></td>
+        <td>${fmt(allRent)}</td>
+        <td class="text-success fw600">${fmt(collected)}</td>
+        <td class="${outstanding>0?'text-danger':''}">${fmt(outstanding)}</td>
+        <td>${pct}%</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div></div>`;
+}
+
+function renderOutstandingReport(){
+  const outstanding=DB.payments.filter(p=>(Number(p.amountDue||0)-Number(p.amountPaid||0))>0);
+  const container=document.getElementById('rpt-outstanding-body');
+  if(!outstanding.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--success)">✅ No outstanding balances!</div>';return;}
+  container.innerHTML=`<div class="card"><div style="overflow-x:auto"><table class="data-table">
+    <thead><tr><th>Tenant</th><th>Property</th><th>Month</th><th>Due</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead>
+    <tbody>${outstanding.map(p=>{
+      const t=getTenant(p.tenantId);
+      const bal=Number(p.amountDue||0)-Number(p.amountPaid||0);
+      return `<tr>
+        <td><strong>${t?.name||'—'}</strong></td>
+        <td>${getProperty(t?.propertyId)?.name||'—'}</td>
+        <td>${fmtMonth(p.month)}</td>
+        <td>${fmt(p.amountDue)}</td>
+        <td>${fmt(p.amountPaid)}</td>
+        <td class="text-danger fw600">${fmt(bal)}</td>
+        <td>${statusBadge(p.status)}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div></div>`;
+}
+
+function renderTenantReport(){
+  const tenantId=document.getElementById('rpt-tenant-select').value;
+  const container=document.getElementById('rpt-tenant-body');
+  if(!tenantId){container.innerHTML='';return;}
+  const t=getTenant(tenantId);
+  const payments=DB.payments.filter(p=>p.tenantId===tenantId).sort((a,b)=>b.month.localeCompare(a.month));
+  if(!payments.length){container.innerHTML='<p style="color:var(--gray-400);text-align:center;padding:40px">No payments recorded for this tenant</p>';return;}
+  const totalPaid=payments.reduce((s,p)=>s+Number(p.amountPaid||0),0);
+  const totalDue=payments.reduce((s,p)=>s+Number(p.amountDue||0),0);
+  container.innerHTML=`<div class="card"><div class="card-header"><span class="card-title">${t.name} — Payment History</span></div>
+    <div style="overflow-x:auto"><table class="data-table">
+      <thead><tr><th>Month</th><th>Due</th><th>Paid</th><th>Balance</th><th>Method</th><th>Status</th></tr></thead>
+      <tbody>${payments.map(p=>{
+        const bal=Number(p.amountDue||0)-Number(p.amountPaid||0);
+        return `<tr>
+          <td><strong>${fmtMonth(p.month)}</strong></td>
+          <td>${fmt(p.amountDue)}</td>
+          <td class="text-success">${fmt(p.amountPaid)}</td>
+          <td class="${bal>0?'text-danger':''}">${fmt(bal)}</td>
+          <td>${p.method||'—'}</td>
+          <td>${statusBadge(p.status)}</td>
+        </tr>`;
+      }).join('')}
+      <tr style="background:var(--gray-50)">
+        <td><strong>TOTAL</strong></td><td>${fmt(totalDue)}</td><td class="text-success fw600">${fmt(totalPaid)}</td>
+        <td class="${totalDue-totalPaid>0?'text-danger fw600':''}">${fmt(totalDue-totalPaid)}</td><td></td><td></td>
+      </tr>
+    </tbody></table></div></div>`;
+}
+
+function switchTab(id){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{b.classList.toggle('active',b.getAttribute('onclick').includes(id));});
+  document.querySelectorAll('.tab-panel').forEach(p=>{p.classList.toggle('active',p.id===id);});
+  if(id==='rpt-outstanding') renderOutstandingReport();
+  if(id==='rpt-monthly') renderMonthlyReport();
+}
+
+// ═══════════════════════════════════════════════════════════
+// MODALS — PAYMENT
+// ═══════════════════════════════════════════════════════════
+function openAddPayment(){
+  document.getElementById('pay-id').value='';
+  document.getElementById('payment-modal-title').textContent='Record Payment';
+  const sel=document.getElementById('pay-tenant-select');
+  sel.innerHTML='<option value="">— Select Tenant —</option>'+DB.tenants.filter(t=>t.status==='Active').map(t=>{
+    const p=getProperty(t.propertyId);
+    return `<option value="${t.id}">${t.name} (${p?.name||''})</option>`;
+  }).join('');
+  const now=new Date();
+  document.getElementById('pay-month').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('pay-date-received').value=now.toISOString().split('T')[0];
+  document.getElementById('pay-amount-due').value='';
+  document.getElementById('pay-amount-paid').value='';
+  document.getElementById('pay-method').value='Zelle';
+  document.getElementById('pay-status').value='Paid';
+  document.getElementById('pay-notes').value='';
+  document.getElementById('pay-balance-display').textContent='$0.00';
+  openModal('modal-payment');
+}
+
+function openEditPayment(id){
+  const p=DB.payments.find(x=>x.id===id);
+  if(!p) return;
+  document.getElementById('pay-id').value=id;
+  document.getElementById('payment-modal-title').textContent='Edit Payment';
+  const sel=document.getElementById('pay-tenant-select');
+  sel.innerHTML='<option value="">— Select Tenant —</option>'+DB.tenants.map(t=>{
+    const prop=getProperty(t.propertyId);
+    return `<option value="${t.id}" ${t.id===p.tenantId?'selected':''}>${t.name} (${prop?.name||''})</option>`;
+  }).join('');
+  document.getElementById('pay-month').value=p.month;
+  document.getElementById('pay-date-received').value=p.dateReceived||'';
+  document.getElementById('pay-amount-due').value=p.amountDue;
+  document.getElementById('pay-amount-paid').value=p.amountPaid;
+  document.getElementById('pay-method').value=p.method;
+  document.getElementById('pay-status').value=p.status;
+  document.getElementById('pay-notes').value=p.notes||'';
+  calcPaymentBalance();
+  openModal('modal-payment');
+}
+
+function autoFillPaymentTenant(){
+  const t=getTenant(document.getElementById('pay-tenant-select').value);
+  if(t) document.getElementById('pay-amount-due').value=t.rent;
+  calcPaymentBalance();
+}
+
+function calcPaymentBalance(){
+  const due=Number(document.getElementById('pay-amount-due').value||0);
+  const paid=Number(document.getElementById('pay-amount-paid').value||0);
+  document.getElementById('pay-balance-display').textContent=fmt(due-paid);
+}
+
+function savePayment(){
+  const id=document.getElementById('pay-id').value;
+  const tenantId=document.getElementById('pay-tenant-select').value;
+  if(!tenantId){alert('Please select a tenant.');return;}
+  const payment={
+    id:id||'pay'+Date.now(),
+    tenantId,
+    month:document.getElementById('pay-month').value,
+    dateReceived:document.getElementById('pay-date-received').value,
+    amountDue:Number(document.getElementById('pay-amount-due').value||0),
+    amountPaid:Number(document.getElementById('pay-amount-paid').value||0),
+    method:document.getElementById('pay-method').value,
+    status:document.getElementById('pay-status').value,
+    notes:document.getElementById('pay-notes').value
+  };
+  if(id){const i=DB.payments.findIndex(p=>p.id===id);if(i>=0)DB.payments[i]=payment;}
+  else DB.payments.push(payment);
+  saveDB();
+  closeModal('modal-payment');
+  populateMonthFilter();
+  renderPayments();
+  renderDashboard();
+}
+
+function deletePayment(id){
+  if(!confirm('Delete this payment?')) return;
+  DB.payments=DB.payments.filter(p=>p.id!==id);
+  saveDB();
+  populateMonthFilter();
+  renderPayments();
+  renderDashboard();
+}
+
+// ═══════════════════════════════════════════════════════════
+// MODALS — TENANT
+// ═══════════════════════════════════════════════════════════
+function openAddTenant(){
+  document.getElementById('ten-id').value='';
+  ['ten-name','ten-phone','ten-email','ten-unit','ten-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ten-lease-start').value='';
+  document.getElementById('ten-lease-end').value='';
+  document.getElementById('ten-rent').value='';
+  document.getElementById('ten-deposit').value='';
+  document.getElementById('ten-status').value='Active';
+  populatePropSelect();
+  openModal('modal-tenant');
+}
+
+function openEditTenant(id){
+  const t=getTenant(id);
+  if(!t) return;
+  document.getElementById('ten-id').value=id;
+  document.getElementById('ten-name').value=t.name;
+  document.getElementById('ten-phone').value=t.phone;
+  document.getElementById('ten-email').value=t.email;
+  document.getElementById('ten-unit').value=t.unit;
+  document.getElementById('ten-lease-start').value=t.leaseStart;
+  document.getElementById('ten-lease-end').value=t.leaseEnd;
+  document.getElementById('ten-rent').value=t.rent;
+  document.getElementById('ten-deposit').value=t.deposit;
+  document.getElementById('ten-status').value=t.status;
+  document.getElementById('ten-notes').value=t.notes;
+  populatePropSelect(t.propertyId);
+  openModal('modal-tenant');
+}
+
+function populatePropSelect(selected=''){
+  const sel=document.getElementById('ten-property');
+  sel.innerHTML=DB.properties.map(p=>`<option value="${p.id}" ${p.id===selected?'selected':''}>${p.name}</option>`).join('');
+}
+
+function saveTenant(){
+  const id=document.getElementById('ten-id').value;
+  const tenant={
+    id:id||'t'+Date.now(),
+    name:document.getElementById('ten-name').value,
+    phone:document.getElementById('ten-phone').value,
+    email:document.getElementById('ten-email').value,
+    propertyId:document.getElementById('ten-property').value,
+    unit:document.getElementById('ten-unit').value,
+    leaseStart:document.getElementById('ten-lease-start').value,
+    leaseEnd:document.getElementById('ten-lease-end').value,
+    rent:Number(document.getElementById('ten-rent').value||0),
+    deposit:Number(document.getElementById('ten-deposit').value||0),
+    status:document.getElementById('ten-status').value,
+    notes:document.getElementById('ten-notes').value,
+    coTenantGroup:''
+  };
+  if(id){const i=DB.tenants.findIndex(t=>t.id===id);if(i>=0)DB.tenants[i]={...DB.tenants[i],...tenant};}
+  else DB.tenants.push(tenant);
+  saveDB();
+  closeModal('modal-tenant');
+  renderTenants();
+  renderDashboard();
+}
+
+// ═══════════════════════════════════════════════════════════
+// MODALS — PROPERTY
+// ═══════════════════════════════════════════════════════════
+let editingPropertyId = null;
+
+function openAddProperty(){
+  editingPropertyId = null;
+  ['prop-name','prop-address','prop-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('prop-units').value='1';
+  document.getElementById('prop-expected-rent').value='';
+  document.getElementById('prop-entity').value='FL';
+  document.getElementById('prop-status').value='Active';
+  document.querySelector('#modal-property .modal-title').textContent='Add Property';
+  openModal('modal-property');
+}
+
+function openEditProperty(id){
+  const p = DB.properties.find(x=>x.id===id);
+  if(!p) return;
+  editingPropertyId = id;
+  document.getElementById('prop-name').value = p.name;
+  document.getElementById('prop-address').value = p.address;
+  document.getElementById('prop-entity').value = p.entity;
+  document.getElementById('prop-units').value = p.units;
+  document.getElementById('prop-expected-rent').value = p.expectedRent;
+  document.getElementById('prop-notes').value = p.notes||'';
+  document.getElementById('prop-status').value = p.status||'Active';
+  document.querySelector('#modal-property .modal-title').textContent='Edit Property';
+  openModal('modal-property');
+}
+
+function saveProperty(){
+  const data = {
+    name: document.getElementById('prop-name').value,
+    address: document.getElementById('prop-address').value,
+    entity: document.getElementById('prop-entity').value,
+    units: Number(document.getElementById('prop-units').value||1),
+    expectedRent: Number(document.getElementById('prop-expected-rent').value||0),
+    notes: document.getElementById('prop-notes').value,
+    status: document.getElementById('prop-status').value
+  };
+  if(editingPropertyId){
+    const idx = DB.properties.findIndex(p=>p.id===editingPropertyId);
+    if(idx>-1) DB.properties[idx] = {...DB.properties[idx], ...data};
+    editingPropertyId = null;
+  } else {
+    DB.properties.push({id:'p'+Date.now(), status:'Active', ...data});
+  }
+  saveDB();
+  closeModal('modal-property');
+  renderProperties();
+  renderDashboard();
+}
+
+function deleteProperty(id){
+  if(!confirm('Delete this property? Tenants linked to it will remain.')) return;
+  DB.properties=DB.properties.filter(p=>p.id!==id);
+  saveDB();
+  renderProperties();
+  renderDashboard();
+}
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+function getProperty(id){return DB.properties.find(p=>p.id===id);}
+function getTenant(id){return DB.tenants.find(t=>t.id===id);}
+function fmt(n){return '$'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtMonth(m){
+  if(!m) return '—';
+  const [y,mo]=m.split('-');
+  const names=['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${names[Number(mo)]} ${y}`;
+}
+function statusBadge(s){
+  const map={Paid:'badge-success',Partial:'badge-warning',Overdue:'badge-danger',Pending:'badge-info',Active:'badge-success',Vacant:'badge-warning',Inactive:'badge-gray'};
+  return `<span class="badge ${map[s]||'badge-gray'}">${s}</span>`;
+}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});
+});
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  loadDB();
+  document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric',year:'numeric'});
+  if(!localStorage.getItem('keredan_rms_v3')){seedDB();}
+  navigateTo('dashboard');
+});
+</script>
+</body>
+</html>
