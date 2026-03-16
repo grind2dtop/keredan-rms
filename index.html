@@ -1261,8 +1261,9 @@ function generatePDF(){
     doc.setFontSize(22);
     doc.setTextColor(26,31,46);
     doc.text('Receipt',margin,bodyY);
+    const receiptLabelWidth=doc.getTextWidth('Receipt');
     doc.setTextColor(23,162,184);
-    doc.text(num,margin+74,bodyY);
+    doc.text(num,margin+receiptLabelWidth+4,bodyY);
 
     // Receipt # label
     doc.setFont('helvetica','normal');
