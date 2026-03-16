@@ -657,6 +657,7 @@ textarea{resize:vertical;min-height:80px}
         <select id="ten-status"><option>Active</option><option>Vacant</option><option>Inactive</option></select>
       </div>
       <div class="form-group"><label>Notes</label><textarea id="ten-notes"></textarea></div>
+      <div class="form-group"><label>Co-Tenant Group <span style="font-size:11px;color:var(--gray-400);font-weight:400">(optional — same value links co-tenants sharing one unit, e.g. p4-apt1)</span></label><input type="text" id="ten-cotenant" placeholder="e.g. p4-apt4 — leave blank if sole tenant"/></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-tenant')">Cancel</button>
@@ -835,7 +836,7 @@ function renderDashboard(){
 
   // Receipt stats
   const receiptCount=DB.receipts.length;
-  const nextNum='PR'+DB.nextReceiptNum;
+  const nextNum=String(DB.nextReceiptNum);
 
   document.getElementById('stat-properties').textContent=activeProps.length;
   document.getElementById('stat-properties-sub').textContent=`${DB.properties.filter(p=>p.entity==='FL'&&p.status==='Active').length} FL · ${DB.properties.filter(p=>p.entity==='PR'&&p.status==='Active').length} PR`;
@@ -1133,7 +1134,7 @@ function redownloadReceipt(id){
 
 function populateReceiptForm(){
   const numEl=document.getElementById('rec-number');
-  numEl.value='PR'+DB.nextReceiptNum;
+  numEl.value=String(DB.nextReceiptNum);
   document.getElementById('rec-date').value=new Date().toISOString().split('T')[0];
 
   const sel=document.getElementById('rec-tenant');
@@ -1257,11 +1258,11 @@ function generatePDF(){
     // Receipt title
     const bodyY=barY+35;
     doc.setFont('helvetica','bold');
-    doc.setFontSize(28);
+    doc.setFontSize(22);
     doc.setTextColor(26,31,46);
     doc.text('Receipt',margin,bodyY);
     doc.setTextColor(23,162,184);
-    doc.text(num,margin+90,bodyY);
+    doc.text(num,margin+74,bodyY);
 
     // Receipt # label
     doc.setFont('helvetica','normal');
@@ -1380,7 +1381,7 @@ function generatePDF(){
     } else {
       DB.receipts.unshift(receiptRecord);
       DB.nextReceiptNum++;
-      document.getElementById('rec-number').value='PR'+DB.nextReceiptNum;
+      document.getElementById('rec-number').value=String(DB.nextReceiptNum);
       saveDB();
       renderReceiptLog();
       alert(`✅ ${num} generated successfully!`);
@@ -1604,7 +1605,7 @@ function deletePayment(id){
 // ═══════════════════════════════════════════════════════════
 function openAddTenant(){
   document.getElementById('ten-id').value='';
-  ['ten-name','ten-phone','ten-email','ten-unit','ten-notes'].forEach(id=>document.getElementById(id).value='');
+  ['ten-name','ten-phone','ten-email','ten-unit','ten-notes','ten-cotenant'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('ten-lease-start').value='';
   document.getElementById('ten-lease-end').value='';
   document.getElementById('ten-rent').value='';
@@ -1628,6 +1629,7 @@ function openEditTenant(id){
   document.getElementById('ten-deposit').value=t.deposit;
   document.getElementById('ten-status').value=t.status;
   document.getElementById('ten-notes').value=t.notes;
+  document.getElementById('ten-cotenant').value=t.coTenantGroup||'';
   populatePropSelect(t.propertyId);
   openModal('modal-tenant');
 }
@@ -1652,7 +1654,7 @@ function saveTenant(){
     deposit:Number(document.getElementById('ten-deposit').value||0),
     status:document.getElementById('ten-status').value,
     notes:document.getElementById('ten-notes').value,
-    coTenantGroup:''
+    coTenantGroup:document.getElementById('ten-cotenant').value.trim()
   };
   if(id){const i=DB.tenants.findIndex(t=>t.id===id);if(i>=0)DB.tenants[i]={...DB.tenants[i],...tenant};}
   else DB.tenants.push(tenant);
