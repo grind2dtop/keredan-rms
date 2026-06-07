@@ -813,7 +813,7 @@ function renderDashboard(){
 
   const activeProps=DB.properties.filter(p=>p.status==='Active');
   const activeTenants=DB.tenants.filter(t=>t.status==='Active');
-  const allRent=calcRentRoll(DB.tenants);
+  const allRent=activeProps.reduce((sum,p)=>sum+(Number(p.expectedRent)||0),0);
 
   // Collected this month
   const thisMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -880,7 +880,7 @@ function renderPropertyProgress(entity,containerId){
   const thisMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   container.innerHTML=props.map(prop=>{
     const propTenants=DB.tenants.filter(t=>t.propertyId===prop.id);
-    const expected=calcRentRoll(propTenants);
+    const expected=Number(prop.expectedRent)||0;
     const collected=DB.payments.filter(p=>{
       const t=getTenant(p.tenantId);
       return t?.propertyId===prop.id&&p.month===thisMonth;
@@ -905,7 +905,7 @@ function renderProperties(){
   const container=document.getElementById('properties-list');
   container.innerHTML=DB.properties.map(p=>{
     const tenants=DB.tenants.filter(t=>t.propertyId===p.id&&t.status==='Active');
-    const rent=calcRentRoll(DB.tenants.filter(t=>t.propertyId===p.id));
+    const rent=p.expectedRent||0;
     return `<div class="card" style="margin-bottom:14px">
       <div class="card-header">
         <div class="flex-row">
@@ -1432,7 +1432,7 @@ function renderReports(){
 function renderMonthlyReport(){
   const months=new Set(DB.payments.map(p=>p.month));
   const sorted=[...months].sort().reverse();
-  const allRent=calcRentRoll(DB.tenants);
+  const allRent=DB.properties.filter(p=>p.status==='Active').reduce((sum,p)=>sum+(Number(p.expectedRent)||0),0);
   const container=document.getElementById('rpt-monthly-body');
   if(!sorted.length){container.innerHTML='<p style="color:var(--gray-400);text-align:center;padding:40px">No payment data yet</p>';return;}
   container.innerHTML=`<div class="card"><div style="overflow-x:auto"><table class="data-table">
